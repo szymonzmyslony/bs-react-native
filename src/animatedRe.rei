@@ -27,6 +27,15 @@ module Interpolation: {
     extrapolateRight::extrapolate? =>
     unit =>
     t;
+  let interpolateWithNativeDriver:
+    value::t =>
+    inputRange::list float =>
+    outputRange::[< | `float (list float) | `string (list string)] =>
+    extrapolate::extrapolate? =>
+    extrapolateLeft::extrapolate? =>
+    extrapolateRight::extrapolate? =>
+    unit =>
+    t;
 };
 
 module Value: {
@@ -40,13 +49,22 @@ module Value: {
   let addListener: t => callback => string;
   let removeListener: t => string => unit;
   let removeAllListeners: t => unit;
-  let resetAnimation: t => callback::(callback)? => unit => unit;
-  let stopAnimation: t => callback::(callback)? => unit => unit;
+  let resetAnimation: t => callback::callback? => unit => unit;
+  let stopAnimation: t => callback::callback? => unit => unit;
   let interpolate:
     t =>
     inputRange::list float =>
     outputRange::[< | `float (list float) | `string (list string)] =>
     easing::(float => float)? =>
+    extrapolate::Interpolation.extrapolate? =>
+    extrapolateLeft::Interpolation.extrapolate? =>
+    extrapolateRight::Interpolation.extrapolate? =>
+    unit =>
+    Interpolation.t;
+  let interpolateWithNativeDriver:
+    t =>
+    inputRange::list float =>
+    outputRange::[< | `float (list float) | `string (list string)] =>
     extrapolate::Interpolation.extrapolate? =>
     extrapolateLeft::Interpolation.extrapolate? =>
     extrapolateRight::Interpolation.extrapolate? =>
@@ -62,15 +80,23 @@ module Value: {
   let divide: value => value => value;
   let multiply: value => value => value;
   module Timing: {
-    type config;
     let animate:
       value::value =>
-      toValue::[ `raw float | `animated value] =>
+      toValue::[ | `raw float | `animated value] =>
       easing::(float => float)? =>
       duration::float? =>
       delay::float? =>
       isInteraction::Js.boolean? =>
-      useNativeDriver::Js.boolean? =>
+      onComplete::Animation.endCallback? =>
+      iterations::int? =>
+      unit =>
+      CompositeAnimation.t;
+    let animateWithNativeDriver:
+      value::value =>
+      toValue::[ | `raw float | `animated value] =>
+      duration::float? =>
+      delay::float? =>
+      isInteraction::Js.boolean? =>
       onComplete::Animation.endCallback? =>
       iterations::int? =>
       unit =>
@@ -80,7 +106,7 @@ module Value: {
     type config;
     let animate:
       value::value =>
-      toValue::[ `raw float | `animated value] =>
+      toValue::[ | `raw float | `animated value] =>
       restDisplacementThreshold::float? =>
       overshootClamping::Js.boolean? =>
       restSpeedThreshold::float? =>
@@ -136,15 +162,23 @@ module ValueXY: {
   let getY: t => Value.t;
   type value = t;
   module Timing: {
-    type config;
     let animate:
       value::value =>
-      toValue::[ `raw jsValue | `animated value] =>
+      toValue::[ | `raw jsValue | `animated value] =>
       easing::(float => float)? =>
       duration::float? =>
       delay::float? =>
       isInteraction::Js.boolean? =>
-      useNativeDriver::Js.boolean? =>
+      onComplete::Animation.endCallback? =>
+      iterations::int? =>
+      unit =>
+      CompositeAnimation.t;
+    let animateWithNativeDriver:
+      value::value =>
+      toValue::[ | `raw jsValue | `animated value] =>
+      duration::float? =>
+      delay::float? =>
+      isInteraction::Js.boolean? =>
       onComplete::Animation.endCallback? =>
       iterations::int? =>
       unit =>
@@ -154,7 +188,7 @@ module ValueXY: {
     type config;
     let animate:
       value::value =>
-      toValue::[ `raw jsValue | `animated value] =>
+      toValue::[ | `raw jsValue | `animated value] =>
       restDisplacementThreshold::float? =>
       overshootClamping::Js.boolean? =>
       restSpeedThreshold::float? =>
@@ -186,6 +220,7 @@ module ValueXY: {
 };
 
 type animatedEvent;
+
 let event: array 'a => 'b => animatedEvent;
 
 let delay: float => CompositeAnimation.t;

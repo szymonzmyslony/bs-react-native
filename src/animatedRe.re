@@ -36,8 +36,7 @@ module Animations = {
         ::useNativeDriver=?
         ::onComplete=?
         ::iterations=?
-        ()
- =>
+        () =>
       _decay
         value
         Js.Undefined.(
@@ -89,16 +88,16 @@ module Animations = {
         ::useNativeDriver=?
         ::onComplete=?
         ::iterations=?
-        ()
- =>
+        () =>
       _spring
         value
         Js.Undefined.(
           {
-            "toValue": switch toValue {
+            "toValue":
+              switch toValue {
               | `raw x => toValueRaw x
               | `animated x => toValueAnimated x
-            },
+              },
             "restDisplacementThreshold": from_opt restDisplacementThreshold,
             "overshootClamping": from_opt overshootClamping,
             "restSpeedThreshold": from_opt restSpeedThreshold,
@@ -116,21 +115,9 @@ module Animations = {
   };
   module Timing (Val: Value) => {
     type toValue;
-    type config =
-      Js.t {
-        .
-        toValue : toValue,
-        easing : Js.undefined (float => float),
-        duration : Js.undefined float,
-        delay : Js.undefined float,
-        isInteraction : Js.undefined Js.boolean,
-        useNativeDriver : Js.undefined Js.boolean,
-        onComplete : Js.undefined Animation.endCallback,
-        iterations : Js.undefined int
-      };
     external toValueRaw : Val.rawJsType => toValue = "%identity";
     external toValueAnimated : Val.t => toValue = "%identity";
-    external _timing : Val.t => config => CompositeAnimation.t =
+    external _timing : Val.t => Js.t 'a => CompositeAnimation.t =
       "timing" [@@bs.module "react-native"] [@@bs.scope "Animated"];
     let animate
         ::value
@@ -139,24 +126,49 @@ module Animations = {
         ::duration=?
         ::delay=?
         ::isInteraction=?
-        ::useNativeDriver=?
         ::onComplete=?
         ::iterations=?
-        ()
-         =>
+        () =>
       _timing
         value
         Js.Undefined.(
           {
-            "toValue": switch toValue {
+            "toValue":
+              switch toValue {
               | `raw x => toValueRaw x
               | `animated x => toValueAnimated x
-            },
+              },
             "easing": from_opt easing,
             "duration": from_opt duration,
             "delay": from_opt delay,
             "isInteraction": from_opt isInteraction,
-            "useNativeDriver": from_opt useNativeDriver,
+            "useNativeDriver": Js.false_,
+            "onComplete": from_opt onComplete,
+            "iterations": from_opt iterations
+          }
+        );
+    let animateWithNativeDriver
+        ::value
+        ::toValue
+        ::duration=?
+        ::delay=?
+        ::isInteraction=?
+        ::onComplete=?
+        ::iterations=?
+        () =>
+      _timing
+        value
+        Js.Undefined.(
+          {
+            "toValue":
+              switch toValue {
+              | `raw x => toValueRaw x
+              | `animated x => toValueAnimated x
+              },
+            "duration": from_opt duration,
+            "delay": from_opt delay,
+            "isInteraction": from_opt isInteraction,
+            "useNativeDriver": Js.true_,
             "onComplete": from_opt onComplete,
             "iterations": from_opt iterations
           }
@@ -189,17 +201,7 @@ module Interpolation = {
     | Clamp => "clamp"
     | Identity => "identity"
     };
-  type config =
-    Js.t {
-      .
-      inputRange : array float,
-      outputRange : outputRange,
-      easing : Js.undefined (float => float),
-      extrapolate : Js.undefined string,
-      extrapolateLeft : Js.undefined string,
-      extrapolateRight : Js.undefined string
-    };
-  external _interpolate : t => config => t = "interpolate" [@@bs.send];
+  external _interpolate : t => Js.t 'a => t = "interpolate" [@@bs.send];
   let interpolate
       ::value
       ::inputRange
@@ -225,6 +227,29 @@ module Interpolation = {
         "extrapolateLeft":
           Js.Undefined.from_opt (UtilsRN.option_map extrapolateString extrapolateLeft)
       };
+  let interpolateWithNativeDriver
+      ::value
+      ::inputRange
+      ::outputRange
+      ::extrapolate=?
+      ::extrapolateLeft=?
+      ::extrapolateRight=?
+      () =>
+    _interpolate
+      value
+      {
+        "inputRange": Array.of_list inputRange,
+        "outputRange":
+          switch outputRange {
+          | `string (x: list string) => outputRangeCreate (Array.of_list x)
+          | `float (x: list float) => outputRangeCreate (Array.of_list x)
+          },
+        "extrapolate": Js.Undefined.from_opt (UtilsRN.option_map extrapolateString extrapolate),
+        "extrapolateRight":
+          Js.Undefined.from_opt (UtilsRN.option_map extrapolateString extrapolateRight),
+        "extrapolateLeft":
+          Js.Undefined.from_opt (UtilsRN.option_map extrapolateString extrapolateLeft)
+      };
 };
 
 module Value = {
@@ -241,13 +266,38 @@ module Value = {
   external removeAllListeners : t => unit = "removeAllListeners" [@@bs.send];
   external _resetAnimation : t => Js.Undefined.t callback => unit = "resetAnimation" [@@bs.send];
   external _stopAnimation : t => Js.Undefined.t callback => unit = "stopAnimation" [@@bs.send];
-  let resetAnimation value ::callback=? () => {
+  let resetAnimation value ::callback=? () =>
     _resetAnimation value (Js.Undefined.from_opt callback);
-  };
-  let stopAnimation value ::callback=? () => {
-    _stopAnimation value (Js.Undefined.from_opt callback);
-  };
-  external _interpolate : t => Interpolation.config => Interpolation.t = "interpolate" [@@bs.send];
+  let stopAnimation value ::callback=? () => _stopAnimation value (Js.Undefined.from_opt callback);
+  external _interpolate : t => Js.t 'a => Interpolation.t = "interpolate" [@@bs.send];
+  let interpolateWithNativeDriver
+    value
+      ::inputRange
+      ::outputRange
+      ::extrapolate=?
+      ::extrapolateLeft=?
+      ::extrapolateRight=?
+      () =>
+    _interpolate
+      value
+      {
+        "inputRange": Array.of_list inputRange,
+        "outputRange":
+          switch outputRange {
+          | `string (x: list string) => Interpolation.outputRangeCreate (Array.of_list x)
+          | `float (x: list float) => Interpolation.outputRangeCreate (Array.of_list x)
+          },
+        "extrapolate":
+          Js.Undefined.from_opt (UtilsRN.option_map Interpolation.extrapolateString extrapolate),
+        "extrapolateRight":
+          Js.Undefined.from_opt (
+            UtilsRN.option_map Interpolation.extrapolateString extrapolateRight
+          ),
+        "extrapolateLeft":
+          Js.Undefined.from_opt (
+            UtilsRN.option_map Interpolation.extrapolateString extrapolateLeft
+          )
+      };
   let interpolate
       value
       ::inputRange
@@ -270,9 +320,13 @@ module Value = {
         "extrapolate":
           Js.Undefined.from_opt (UtilsRN.option_map Interpolation.extrapolateString extrapolate),
         "extrapolateRight":
-          Js.Undefined.from_opt (UtilsRN.option_map Interpolation.extrapolateString extrapolateRight),
+          Js.Undefined.from_opt (
+            UtilsRN.option_map Interpolation.extrapolateString extrapolateRight
+          ),
         "extrapolateLeft":
-          Js.Undefined.from_opt (UtilsRN.option_map Interpolation.extrapolateString extrapolateLeft)
+          Js.Undefined.from_opt (
+            UtilsRN.option_map Interpolation.extrapolateString extrapolateLeft
+          )
       };
   external animate : t => Animation.t => Animation.endCallback => unit = "animate" [@@bs.send];
   external stopTracking : t => unit = "stopTracking" [@@bs.send];
@@ -337,6 +391,7 @@ external _loop : CompositeAnimation.t => Js.t {. iterations : int} => CompositeA
   "loop" [@@bs.module "react-native"] [@@bs.scope "Animated"];
 
 type animatedEvent;
+
 external event : array 'a => 'b => animatedEvent =
   "" [@@bs.module "react-native"] [@@bs.scope "Animated"];
 
@@ -353,4 +408,3 @@ module SpringXY = ValueXY.Spring;
 module Decay = Value.Decay;
 
 module DecayXY = ValueXY.Decay;
-
